@@ -1,0 +1,27 @@
+@font-face {
+  font-family: 'Poppins';
+  src: url('./poppins.ttf');
+}
+
+:root {
+  --primary: #003856;
+  --secondary: #05556F;
+  --accent: #849E8A;
+  --neutral: #D7CFA1;
+  --light: white;
+}
+
+* {
+  margin: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 12px;
+}
+
+body {
+  font-family: 'Poppins';
+  background-color: var(--light);
+  color: var(--primary);
+}
