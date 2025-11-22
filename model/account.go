@@ -9,5 +9,5 @@ type Account struct {
 }
 
 func (Account) TableName() string {
-	return accounts
+	return "accounts"
 }

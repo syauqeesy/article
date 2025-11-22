@@ -9,6 +9,9 @@ import (
 
 	"ahmadsyauqi.dev/article/common"
 	"ahmadsyauqi.dev/article/configuration"
+	"ahmadsyauqi.dev/article/handler"
+	"ahmadsyauqi.dev/article/repository"
+	"ahmadsyauqi.dev/article/service"
 )
 
 type httpFoundation struct {
@@ -16,6 +19,9 @@ type httpFoundation struct {
 	mux           *http.ServeMux
 	server        *http.Server
 	database      *databaseFoundation
+	repository    *repository.Repository
+	service       *service.Service
+	handler       *handler.Handler
 }
 
 func (f *httpFoundation) Setup() error {
@@ -34,6 +40,12 @@ func (f *httpFoundation) Setup() error {
 	if err != nil {
 		return err
 	}
+
+	f.repository = repository.New(f.database.database)
+
+	f.service = service.New(f.configuration, f.repository)
+
+	f.handler = handler.New(f.mux, f.configuration, f.service)
 
 	var t time.Time
 	result := f.database.database.Raw("SELECT NOW() AS THIS_MOMENT").Scan(&t)
