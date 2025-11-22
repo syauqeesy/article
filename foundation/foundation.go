@@ -55,6 +55,17 @@ func New(foundationType string, arguments []string) (Foundation, error) {
 		return &httpFoundation{
 			configuration: configuration,
 		}, nil
+	case FoundationMigration:
+		foundation := &migrationFoundation{
+			configuration: configuration,
+			commandType:   arguments[0],
+		}
+
+		if len(arguments) > 1 {
+			foundation.commandArgument = arguments[1]
+		}
+
+		return foundation, nil
 	default:
 		return nil, errors.New("invalid foundation type")
 	}
