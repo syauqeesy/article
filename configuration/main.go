@@ -17,6 +17,10 @@ type Configuration struct {
 		Name     string `json:"name"`
 		Sslmode  string `json:"sslmode"`
 	} `json:"database"`
+	Oauth struct {
+		ClientId     string `json:"client_id"`
+		ClientSecret string `json:"client_secret"`
+	}
 }
 
 func Load(path string) (*Configuration, error) {
