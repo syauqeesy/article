@@ -16,6 +16,8 @@ type Configuration struct {
 		Password string `json:"password"`
 		Name     string `json:"name"`
 		Sslmode  string `json:"sslmode"`
+		Timezone string `json:"timezone"`
+		Timeout  int    `json:"timeout"`
 	} `json:"database"`
 	Oauth struct {
 		ClientId     string `json:"client_id"`

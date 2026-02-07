@@ -8,7 +8,9 @@
     "user": "postgres",
     "password": "postgres",
     "name": "article",
-    "sslmode": "disable"
+    "sslmode": "disable",
+    "timezone": "UTC",
+    "timeout": 10
   },
   "oauth": {
     "client_id": "google-oauth-client-id",

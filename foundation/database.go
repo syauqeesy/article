@@ -2,6 +2,7 @@ package foundation
 
 import (
 	"fmt"
+	"net/url"
 
 	"ahmadsyauqi.dev/article/configuration"
 	"gorm.io/driver/postgres"
@@ -17,7 +18,7 @@ type databaseFoundation struct {
 }
 
 func (f *databaseFoundation) Setup() error {
-	f.databaseConnectionUrl = fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=%s", f.configuration.Database.User, f.configuration.Database.Password, f.configuration.Database.Host, f.configuration.Database.Port, f.configuration.Database.Name, f.configuration.Database.Sslmode)
+	f.databaseConnectionUrl = fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=%s&TimeZone=%s&connect_timeout=%d", f.configuration.Database.User, url.QueryEscape(f.configuration.Database.Password), f.configuration.Database.Host, f.configuration.Database.Port, f.configuration.Database.Name, f.configuration.Database.Sslmode, f.configuration.Database.Timezone, f.configuration.Database.Timeout)
 
 	f.databaseConfiguration = &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
