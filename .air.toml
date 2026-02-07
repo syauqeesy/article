@@ -1,3 +1,5 @@
 [build]
+cmd = "go build -o ./tmp/app ."
+bin = "./tmp/app"
 exclude_dir = ["application"]
 
