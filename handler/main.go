@@ -26,8 +26,15 @@ func New(mux *http.ServeMux, configuration *configuration.Configuration, service
 		Account: (*accountHandler)(handler),
 	}
 
-	mux.HandleFunc("GET /auth/oauth/{provider}", h.Account.Oauth)
-	mux.HandleFunc("GET /auth/oauth/{provider}/callback", h.Account.OauthCallback)
+	auth := http.NewServeMux()
+
+	oauth := http.NewServeMux()
+	oauth.HandleFunc("GET /{provider}", h.Account.Oauth)
+	oauth.HandleFunc("GET /{provider}/callback", h.Account.OauthCallback)
+
+	auth.Handle("/oauth/", http.StripPrefix("/oauth", oauth))
+
+	mux.Handle("/auth/", http.StripPrefix("/auth", auth))
 
 	return h
 }
