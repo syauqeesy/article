@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -22,6 +23,8 @@ func HttpErrorHandler(w http.ResponseWriter, exception error, payload any) {
 		message = exception.Error()
 	default:
 		w.WriteHeader(http.StatusInternalServerError)
+
+		fmt.Println(exception.Error())
 	}
 
 	err := json.NewEncoder(w).Encode(&HttpJsonResponse{
