@@ -54,6 +54,53 @@ func issueAuthenticationToken(subject string, ttl time.Duration, secret string) 
 	return &signedAccessToken, &expiresAt, nil
 }
 
+func setupOauthConfig(clientId string, clientSecret string, redirectUrl string) *oauth2.Config {
+	oauth := &oauth2.Config{
+		ClientID:     clientId,
+		ClientSecret: clientSecret,
+		RedirectURL:  redirectUrl,
+		Scopes:       []string{"openid", "email", "profile"},
+		Endpoint:     google.Endpoint,
+	}
+
+	return oauth
+}
+
+func exchangeOauthCode(ctx context.Context, oauth *oauth2.Config, code string, clientId string) (*idtoken.Payload, error) {
+	token, err := oauth.Exchange(ctx, code)
+	if err != nil {
+		return nil, err
+	}
+
+	idToken := token.Extra("id_token").(string)
+	if idToken == "" {
+		return nil, exception.Unauthorized
+	}
+
+	idTokenPayload, err := idtoken.Validate(ctx, idToken, clientId)
+	if err != nil {
+		return nil, err
+	}
+
+	return idTokenPayload, nil
+}
+
+func getOauthClaims(idTokenPayload *idtoken.Payload) (string, string, string, error) {
+	subject := idTokenPayload.Subject
+
+	email := idTokenPayload.Claims["email"].(string)
+	if email == "" {
+		return "", "", "", exception.Unauthorized
+	}
+
+	name := idTokenPayload.Claims["name"].(string)
+	if name == "" {
+		return "", "", "", exception.Unauthorized
+	}
+
+	return subject, email, name, nil
+}
+
 func (s *accountService) Oauth(provider string) (*payload.OauthResponse, error) {
 	if provider != "google" {
 		return nil, exception.InvalidOauthProvider
@@ -64,13 +111,7 @@ func (s *accountService) Oauth(provider string) (*payload.OauthResponse, error) 
 		return nil, err
 	}
 
-	oauth := &oauth2.Config{
-		ClientID:     s.Configuration.Oauth.ClientId,
-		ClientSecret: s.Configuration.Oauth.ClientSecret,
-		RedirectURL:  s.Configuration.Oauth.RedirectUrl,
-		Scopes:       []string{"openid", "email", "profile"},
-		Endpoint:     google.Endpoint,
-	}
+	oauth := setupOauthConfig(s.Configuration.Oauth.ClientId, s.Configuration.Oauth.ClientSecret, s.Configuration.Oauth.RedirectUrl)
 
 	url := oauth.AuthCodeURL(state, oauth2.AccessTypeOnline)
 
@@ -85,39 +126,16 @@ func (s *accountService) OauthCallback(ctx context.Context, provider string, cod
 		return nil, exception.InvalidOauthProvider
 	}
 
-	oauth := &oauth2.Config{
-		ClientID:     s.Configuration.Oauth.ClientId,
-		ClientSecret: s.Configuration.Oauth.ClientSecret,
-		RedirectURL:  s.Configuration.Oauth.RedirectUrl,
-		Scopes:       []string{"openid", "email", "profile"},
-		Endpoint:     google.Endpoint,
-	}
+	oauth := setupOauthConfig(s.Configuration.Oauth.ClientId, s.Configuration.Oauth.ClientSecret, s.Configuration.Oauth.RedirectUrl)
 
-	token, err := oauth.Exchange(ctx, code)
+	idTokenPayload, err := exchangeOauthCode(ctx, oauth, code, s.Configuration.Oauth.ClientId)
 	if err != nil {
 		return nil, err
 	}
 
-	idToken := token.Extra("id_token").(string)
-	if idToken == "" {
-		return nil, exception.Unauthorized
-	}
-
-	idPayload, err := idtoken.Validate(ctx, idToken, s.Configuration.Oauth.ClientId)
+	subject, email, name, err := getOauthClaims(idTokenPayload)
 	if err != nil {
 		return nil, err
-	}
-
-	subject := idPayload.Subject
-
-	email := idPayload.Claims["email"].(string)
-	if email == "" {
-		return nil, exception.Unauthorized
-	}
-
-	name := idPayload.Claims["name"].(string)
-	if name == "" {
-		return nil, exception.Unauthorized
 	}
 
 	accountIdentity, _ := s.Repository.AccountIdentity.FindByProviderAndProviderUserId(ctx, provider, subject)
