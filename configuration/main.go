@@ -22,6 +22,14 @@ type Configuration struct {
 	Oauth struct {
 		ClientId     string `json:"client_id"`
 		ClientSecret string `json:"client_secret"`
+		RedirectUrl  string `json:"redirect_url"`
+	}
+	Authentication struct {
+		Secret        string `json:"secret"`
+		RefreshSecret string `json:"refresh_secret"`
+	}
+	Application struct {
+		Url string `json:"url"`
 	}
 }
 

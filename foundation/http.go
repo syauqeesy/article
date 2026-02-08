@@ -54,7 +54,7 @@ func (f *httpFoundation) Setup() error {
 	}
 
 	f.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		common.HttpErrorHandler(w, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
+		common.HttpErrorHandler(w, common.CreateException(http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed)), nil)
 	})
 
 	f.server = &http.Server{

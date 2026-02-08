@@ -1,5 +1,34 @@
 package repository
 
-type AccountRepository interface{}
+import (
+	"context"
+
+	"ahmadsyauqi.dev/article/model"
+)
+
+type AccountRepository interface {
+	FindByEmail(ctx context.Context, email string) (*model.Account, error)
+	Create(ctx context.Context, account *model.Account) error
+}
 
 type accountRepository repository
+
+func (r *accountRepository) FindByEmail(ctx context.Context, email string) (*model.Account, error) {
+	account := &model.Account{}
+
+	q := r.Database.WithContext(ctx).Where("email = ?", email).First(&account)
+	if q.Error != nil {
+		return nil, q.Error
+	}
+
+	return account, nil
+}
+
+func (r *accountRepository) Create(ctx context.Context, account *model.Account) error {
+	q := r.Database.WithContext(ctx).Create(&account)
+	if q.Error != nil {
+		return q.Error
+	}
+
+	return nil
+}
