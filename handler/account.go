@@ -23,7 +23,7 @@ func (h *accountHandler) Oauth(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		Secure:   false,
 		SameSite: http.SameSiteLaxMode,
-		MaxAge:   10 * 60,
+		MaxAge:   int((10 * time.Minute).Seconds()),
 	})
 
 	common.WriteHttpRedirect(w, r, result.ConsentPageUrl)
