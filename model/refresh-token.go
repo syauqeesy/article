@@ -1,6 +1,11 @@
 package model
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -25,7 +30,7 @@ func (RefreshToken) TableName() string {
 	return "refresh_tokens"
 }
 
-func NewRefreshToken(accountId string, token string, expiresAt int64) (*RefreshToken, error) {
+func NewRefreshToken(accountId string, pepper string, token string, expiresAt int64) (*RefreshToken, error) {
 	refreshToken := &RefreshToken{
 		Id:        uuid.New().String(),
 		CreatedAt: time.Now().UTC().UnixMilli(),
@@ -38,7 +43,7 @@ func NewRefreshToken(accountId string, token string, expiresAt int64) (*RefreshT
 		return nil, err
 	}
 
-	err = refreshToken.SetToken(token)
+	err = refreshToken.SetToken(pepper, token)
 	if err != nil {
 		return nil, err
 	}
@@ -49,6 +54,23 @@ func NewRefreshToken(accountId string, token string, expiresAt int64) (*RefreshT
 	}
 
 	return refreshToken, nil
+}
+
+func HashRefreshToken(pepper string, refreshToken string) (string, error) {
+	pepperInBytes, err := base64.StdEncoding.DecodeString(pepper)
+	if err != nil {
+		return "", err
+	}
+
+	mac := hmac.New(sha256.New, pepperInBytes)
+	mac.Write([]byte(refreshToken))
+	macSum := mac.Sum(nil)
+
+	return hex.EncodeToString(macSum), nil
+}
+
+func (m *RefreshToken) IsExpired() bool {
+	return time.UnixMilli(m.GetExpiresAt()).Before(time.Now())
 }
 
 func (m *RefreshToken) SetAccountId(accountId string) error {
@@ -64,22 +86,27 @@ func (m *RefreshToken) SetAccountId(accountId string) error {
 	return nil
 }
 
-func (m *RefreshToken) SetToken(token string) error {
+func (m *RefreshToken) SetToken(pepper string, token string) error {
 	validate := validator.New()
 
 	err := validate.Var(token, "required")
 	if err != nil {
-		common.CreateException(http.StatusBadRequest, err.Error())
+		return common.CreateException(http.StatusBadRequest, err.Error())
 	}
 
-	m.Token = token
+	hashedToken, err := HashRefreshToken(pepper, token)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(hashedToken)
+	m.Token = hashedToken
 
 	return nil
 }
 
 func (m *RefreshToken) SetExpiresAt(expiresAt int64) error {
 	validate := validator.New()
-
 	err := validate.Var(expiresAt, "required,numeric")
 	if err != nil {
 		return common.CreateException(http.StatusBadRequest, err.Error())
@@ -90,11 +117,27 @@ func (m *RefreshToken) SetExpiresAt(expiresAt int64) error {
 	return nil
 }
 
+func (m *RefreshToken) SetUpdatedAt() error {
+	updatedAt := time.Now().UTC().UnixMilli()
+
+	m.UpdatedAt = &updatedAt
+
+	return nil
+}
+
+func (m *RefreshToken) SetDeletedAt() error {
+	deletedAt := time.Now().UTC().UnixMilli()
+
+	m.DeletedAt = &deletedAt
+
+	return nil
+}
+
 func (m *RefreshToken) GetId() string {
 	return m.Id
 }
 
-func (m *RefreshToken) GetUserId() string {
+func (m *RefreshToken) GetAccountId() string {
 	return m.AccountId
 }
 

@@ -27,6 +27,7 @@ type Configuration struct {
 	Authentication struct {
 		Secret        string `json:"secret"`
 		RefreshSecret string `json:"refresh_secret"`
+		RefreshPepper string `json:"refresh_pepper"`
 	}
 	Application struct {
 		Url string `json:"url"`

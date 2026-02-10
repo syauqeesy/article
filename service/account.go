@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"ahmadsyauqi.dev/article/exception"
+	"ahmadsyauqi.dev/article/middleware"
 	"ahmadsyauqi.dev/article/model"
 	"ahmadsyauqi.dev/article/payload"
 	"github.com/golang-jwt/jwt/v5"
@@ -19,6 +20,7 @@ type AccountService interface {
 	Oauth(provider string) (*payload.OauthResponse, error)
 	OauthCallback(ctx context.Context, provider string, code string, state string) (*payload.OauthCallbackResponse, error)
 	Detail(ctx context.Context, id string) (*payload.AccountInfo, error)
+	AuthRefresh(ctx context.Context) (string, error)
 }
 
 type accountService service
@@ -41,7 +43,7 @@ func issueAuthenticationToken(subject string, ttl time.Duration, secret string) 
 	claims := jwt.MapClaims{
 		"sub":  subject,
 		"iat":  now.UTC(),
-		"exp":  now.Add(ttl).Unix(),
+		"exp":  now.Add(ttl).UTC().Unix(),
 		"type": "access",
 	}
 
@@ -171,7 +173,7 @@ func (s *accountService) OauthCallback(ctx context.Context, provider string, cod
 		return nil, err
 	}
 
-	refreshTokenModel, err := model.NewRefreshToken(accountIdentity.GetAccountId(), *refreshToken, *expiresAt)
+	refreshTokenModel, err := model.NewRefreshToken(accountIdentity.GetAccountId(), s.Configuration.Authentication.RefreshPepper, *refreshToken, *expiresAt)
 	if err != nil {
 		return nil, err
 	}
@@ -195,4 +197,34 @@ func (s *accountService) Detail(ctx context.Context, id string) (*payload.Accoun
 	}
 
 	return account.GetInfo(), nil
+}
+
+func (s *accountService) AuthRefresh(ctx context.Context) (string, error) {
+	token, ok := middleware.GetRefreshToken(ctx)
+	if !ok {
+		return "", exception.Unauthorized
+	}
+
+	hashedRefreshToken, err := model.HashRefreshToken(s.Configuration.Authentication.RefreshPepper, token)
+
+	refreshToken, err := s.Repository.RefreshToken.FindByToken(ctx, hashedRefreshToken)
+	if err != nil {
+		return "", exception.Unauthorized
+	}
+
+	if refreshToken.IsExpired() {
+		err = s.Repository.RefreshToken.Delete(ctx, refreshToken)
+		if err != nil {
+			return "", err
+		}
+
+		return "", exception.Unauthorized
+	}
+
+	accessToken, _, err := issueAuthenticationToken(refreshToken.GetAccountId(), 1*time.Hour, s.Configuration.Authentication.Secret)
+	if err != nil {
+		return "", err
+	}
+
+	return *accessToken, nil
 }

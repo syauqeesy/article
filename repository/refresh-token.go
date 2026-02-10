@@ -2,17 +2,28 @@ package repository
 
 import (
 	"context"
-	"time"
 
 	"ahmadsyauqi.dev/article/model"
 )
 
 type RefreshTokenRepository interface {
+	FindByToken(ctx context.Context, token string) (*model.RefreshToken, error)
 	Create(ctx context.Context, refreshToken *model.RefreshToken) error
-	DeleteByAccountId(ctx context.Context, accountId string) error
+	Delete(ctx context.Context, refreshToken *model.RefreshToken) error
 }
 
 type refreshTokenRepository repository
+
+func (r *refreshTokenRepository) FindByToken(ctx context.Context, token string) (*model.RefreshToken, error) {
+	refreshToken := &model.RefreshToken{}
+
+	q := r.Database.WithContext(ctx).Where("token = ?", token).Where("deleted_at IS NULL").First(&refreshToken)
+	if q.Error != nil {
+		return nil, q.Error
+	}
+
+	return refreshToken, nil
+}
 
 func (r *refreshTokenRepository) Create(ctx context.Context, refreshToken *model.RefreshToken) error {
 	q := r.Database.WithContext(ctx).Create(refreshToken)
@@ -23,8 +34,12 @@ func (r *refreshTokenRepository) Create(ctx context.Context, refreshToken *model
 	return nil
 }
 
-func (r *refreshTokenRepository) DeleteByAccountId(ctx context.Context, accountId string) error {
-	q := r.Database.WithContext(ctx).Model(&model.RefreshToken{}).Where("account_id = ?", accountId).Update("deleted_at = ?", time.Now().UTC().UnixMilli())
+func (r *refreshTokenRepository) Delete(ctx context.Context, refreshToken *model.RefreshToken) error {
+	refreshToken.SetUpdatedAt()
+
+	refreshToken.SetDeletedAt()
+
+	q := r.Database.WithContext(ctx).Save(&refreshToken)
 	if q.Error != nil {
 		return q.Error
 	}

@@ -1,12 +1,10 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
 	"ahmadsyauqi.dev/article/common"
-	"ahmadsyauqi.dev/article/middleware"
 )
 
 type accountHandler handler
@@ -45,7 +43,7 @@ func (h *accountHandler) OauthCallback(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		Secure:   false,
 		SameSite: http.SameSiteLaxMode,
-		MaxAge:   int((15 * time.Minute).Seconds()),
+		MaxAge:   int((1 * time.Hour).Seconds()),
 	})
 
 	http.SetCookie(w, &http.Cookie{
@@ -69,4 +67,24 @@ func (h *accountHandler) Detail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	common.WriteHttpResponse(w, http.StatusOK, "Get Detail Account Success", result)
+}
+
+func (h *accountHandler) AuthRefresh(w http.ResponseWriter, r *http.Request) {
+	result, err := h.Service.Account.AuthRefresh(r.Context())
+	if err != nil {
+		common.HttpErrorHandler(w, err, nil)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    result,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   int((1 * time.Hour).Seconds()),
+	})
+
+	common.WriteHttpResponse(w, http.StatusOK, "Success Refresh Access Token", nil)
 }
