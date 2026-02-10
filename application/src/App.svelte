@@ -31,7 +31,6 @@
     const target = event.target as HTMLInputElement;
 
     const file = target.files?.[0];
-
     if (file)
       editor
         .chain()

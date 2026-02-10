@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"ahmadsyauqi.dev/article/configuration"
+	"ahmadsyauqi.dev/article/middleware"
 	"ahmadsyauqi.dev/article/service"
 )
 
@@ -33,7 +34,11 @@ func New(mux *http.ServeMux, configuration *configuration.Configuration, service
 	oauth.HandleFunc("GET /{provider}/callback", h.Account.OauthCallback)
 	auth.Handle("/oauth/", http.StripPrefix("/oauth", oauth))
 
+	account := http.NewServeMux()
+	account.HandleFunc("GET /{id}", h.Account.Detail)
+
 	mux.Handle("/auth/", http.StripPrefix("/auth", auth))
+	mux.Handle("/account/", middleware.Authentication(configuration)(http.StripPrefix("/account", account)))
 
 	return h
 }

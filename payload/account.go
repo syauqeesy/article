@@ -10,3 +10,10 @@ type OauthCallbackResponse struct {
 	Token        string
 	RefreshToken string
 }
+
+type AccountInfo struct {
+	Id        string `json:"id"`
+	Email     string `json:"email"`
+	Name      string `json:"name"`
+	CreatedAt int64  `json:"created_at"`
+}

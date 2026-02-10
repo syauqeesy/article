@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"ahmadsyauqi.dev/article/common"
+	"ahmadsyauqi.dev/article/payload"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 )
@@ -20,6 +21,17 @@ type Account struct {
 
 func (Account) TableName() string {
 	return "accounts"
+}
+
+func (m *Account) GetInfo() *payload.AccountInfo {
+	accountInfo := &payload.AccountInfo{
+		Id:        m.Id,
+		Email:     m.Email,
+		Name:      m.Name,
+		CreatedAt: m.CreatedAt,
+	}
+
+	return accountInfo
 }
 
 func NewAccount(email string, name string) (*Account, error) {

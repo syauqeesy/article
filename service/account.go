@@ -18,6 +18,7 @@ import (
 type AccountService interface {
 	Oauth(provider string) (*payload.OauthResponse, error)
 	OauthCallback(ctx context.Context, provider string, code string, state string) (*payload.OauthCallbackResponse, error)
+	Detail(ctx context.Context, id string) (*payload.AccountInfo, error)
 }
 
 type accountService service
@@ -40,7 +41,7 @@ func issueAuthenticationToken(subject string, ttl time.Duration, secret string) 
 	claims := jwt.MapClaims{
 		"sub":  subject,
 		"iat":  now.UTC(),
-		"exp":  now.Add(ttl).UTC(),
+		"exp":  now.Add(ttl).Unix(),
 		"type": "access",
 	}
 
@@ -127,7 +128,6 @@ func (s *accountService) OauthCallback(ctx context.Context, provider string, cod
 	}
 
 	oauth := setupOauthConfig(s.Configuration.Oauth.ClientId, s.Configuration.Oauth.ClientSecret, s.Configuration.Oauth.RedirectUrl)
-
 	idTokenPayload, err := exchangeOauthCode(ctx, oauth, code, s.Configuration.Oauth.ClientId)
 	if err != nil {
 		return nil, err
@@ -186,4 +186,13 @@ func (s *accountService) OauthCallback(ctx context.Context, provider string, cod
 		Token:        *accessToken,
 		RefreshToken: *refreshToken,
 	}, nil
+}
+
+func (s *accountService) Detail(ctx context.Context, id string) (*payload.AccountInfo, error) {
+	account, err := s.Repository.Account.FindById(ctx, id)
+	if err != nil {
+		return nil, exception.AccountNotFound
+	}
+
+	return account.GetInfo(), nil
 }
