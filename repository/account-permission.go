@@ -7,15 +7,15 @@ import (
 )
 
 type AccountPermissionRepository interface {
-	FindByPermissionCodeAndAccountId(ctx context.Context, code string, accountId string) (*model.AccountPermission, error)
+	FindByAccountIdAndPermissionId(ctx context.Context, accountId string, permissionId string) (*model.AccountPermission, error)
 }
 
 type accountPermissionRepository repository
 
-func (r *accountPermissionRepository) FindByPermissionCodeAndAccountId(ctx context.Context, code string, accountId string) (*model.AccountPermission, error) {
+func (r *accountPermissionRepository) FindByAccountIdAndPermissionId(ctx context.Context, accountId string, permissionId string) (*model.AccountPermission, error) {
 	accountPermission := &model.AccountPermission{}
 
-	q := r.Database.WithContext(ctx).Preload("Permission", "code = ?", code).Where("account_id = ?", accountId).First(&accountPermission)
+	q := r.Database.WithContext(ctx).Where("account_id = ?", accountId).Where("permission_id", permissionId).First(&accountPermission)
 	if q.Error != nil {
 		return nil, q.Error
 	}

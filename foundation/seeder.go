@@ -80,7 +80,7 @@ func (f *seederFoundation) Boot() error {
 
 		q = f.database.database.Where("code = ?", value[0]).First(&permission)
 		if q.Error != nil {
-			permission, err := model.NewPermission(value[0], value[1])
+			permission, err = model.NewPermission(value[0], value[1])
 			if err != nil {
 				return err
 			}
@@ -94,20 +94,20 @@ func (f *seederFoundation) Boot() error {
 		permissions = append(permissions, permission)
 	}
 
-	q = f.database.database.Model(&model.AccountPermission{}).Where("account_id = ?", account.GetId()).Delete(nil)
-	if q.Error != nil {
-		return q.Error
-	}
-
 	for _, permission := range permissions {
-		accountPermission, err := model.NewAccountPermission(account.GetId(), permission.GetId())
-		if err != nil {
-			return err
-		}
+		accountPermission := &model.AccountPermission{}
 
-		q = f.database.database.Create(&accountPermission)
+		q := f.database.database.Where("account_id = ?", account.GetId()).Where("permission_id = ?", permission.GetId()).First(&accountPermission)
 		if q.Error != nil {
-			return q.Error
+			accountPermission, err = model.NewAccountPermission(account.GetId(), permission.GetId())
+			if err != nil {
+				return err
+			}
+
+			q = f.database.database.Create(&accountPermission)
+			if q.Error != nil {
+				return q.Error
+			}
 		}
 	}
 

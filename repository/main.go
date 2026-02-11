@@ -10,6 +10,7 @@ type Repository struct {
 	Account           AccountRepository
 	AccountIdentity   AccountIdentityRepository
 	RefreshToken      RefreshTokenRepository
+	Permission        PermissionRepository
 	AccountPermission AccountPermissionRepository
 }
 
@@ -22,6 +23,7 @@ func New(database *gorm.DB) *Repository {
 		Account:           (*accountRepository)(repository),
 		AccountIdentity:   (*accountIdentityRepository)(repository),
 		RefreshToken:      (*refreshTokenRepository)(repository),
+		Permission:        (*permissionRepository)(repository),
 		AccountPermission: (*accountPermissionRepository)(repository),
 	}
 }

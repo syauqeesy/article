@@ -40,7 +40,7 @@ func New(mux *http.ServeMux, configuration *configuration.Configuration, service
 	auth.Handle("/oauth/", http.StripPrefix("/oauth", oauth))
 
 	account := http.NewServeMux()
-	account.Handle("GET /{id}", middleware.HasPermission("article.create", repository.AccountPermission)(http.HandlerFunc(h.Account.Detail)))
+	account.Handle("GET /{id}", middleware.HasPermission("article.create", repository.Permission, repository.AccountPermission)(http.HandlerFunc(h.Account.Detail)))
 
 	mux.Handle("/auth/", http.StripPrefix("/auth", auth))
 	mux.Handle("/account/", middleware.Authentication(configuration)(http.StripPrefix("/account", account)))
