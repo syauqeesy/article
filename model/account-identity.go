@@ -19,7 +19,7 @@ type AccountIdentity struct {
 	UpdatedAt      *int64 `gorm:"column:updated_at;type:bigint;default:null"`
 	DeletedAt      *int64 `gorm:"column:deleted_at;type:bigint;default:null"`
 
-	Account Account `gorm:"foreignKey:AccountId;references:Id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Account *Account `gorm:"foreignKey:AccountId;references:Id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
 func (AccountIdentity) TableName() string {

@@ -45,7 +45,7 @@ func (f *httpFoundation) Setup() error {
 
 	f.service = service.New(f.configuration, f.repository)
 
-	f.handler = handler.New(f.mux, f.configuration, f.service)
+	f.handler = handler.New(f.mux, f.configuration, f.service, f.repository)
 
 	var t time.Time
 	result := f.database.database.Raw("SELECT NOW() AS THIS_MOMENT").Scan(&t)

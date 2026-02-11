@@ -7,9 +7,10 @@ type repository struct {
 }
 
 type Repository struct {
-	Account         AccountRepository
-	AccountIdentity AccountIdentityRepository
-	RefreshToken    RefreshTokenRepository
+	Account           AccountRepository
+	AccountIdentity   AccountIdentityRepository
+	RefreshToken      RefreshTokenRepository
+	AccountPermission AccountPermissionRepository
 }
 
 func New(database *gorm.DB) *Repository {
@@ -18,8 +19,9 @@ func New(database *gorm.DB) *Repository {
 	}
 
 	return &Repository{
-		Account:         (*accountRepository)(repository),
-		AccountIdentity: (*accountIdentityRepository)(repository),
-		RefreshToken:    (*refreshTokenRepository)(repository),
+		Account:           (*accountRepository)(repository),
+		AccountIdentity:   (*accountIdentityRepository)(repository),
+		RefreshToken:      (*refreshTokenRepository)(repository),
+		AccountPermission: (*accountPermissionRepository)(repository),
 	}
 }

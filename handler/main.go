@@ -5,11 +5,13 @@ import (
 
 	"ahmadsyauqi.dev/article/configuration"
 	"ahmadsyauqi.dev/article/middleware"
+	"ahmadsyauqi.dev/article/repository"
 	"ahmadsyauqi.dev/article/service"
 )
 
 type handler struct {
 	Service       *service.Service
+	Repository    *repository.Repository
 	Configuration *configuration.Configuration
 }
 
@@ -17,10 +19,11 @@ type Handler struct {
 	Account *accountHandler
 }
 
-func New(mux *http.ServeMux, configuration *configuration.Configuration, service *service.Service) *Handler {
+func New(mux *http.ServeMux, configuration *configuration.Configuration, service *service.Service, repository *repository.Repository) *Handler {
 	handler := &handler{
 		Configuration: configuration,
 		Service:       service,
+		Repository:    repository,
 	}
 
 	h := &Handler{
@@ -37,7 +40,7 @@ func New(mux *http.ServeMux, configuration *configuration.Configuration, service
 	auth.Handle("/oauth/", http.StripPrefix("/oauth", oauth))
 
 	account := http.NewServeMux()
-	account.HandleFunc("GET /{id}", h.Account.Detail)
+	account.Handle("GET /{id}", middleware.HasPermission("article.create", repository.AccountPermission)(http.HandlerFunc(h.Account.Detail)))
 
 	mux.Handle("/auth/", http.StripPrefix("/auth", auth))
 	mux.Handle("/account/", middleware.Authentication(configuration)(http.StripPrefix("/account", account)))

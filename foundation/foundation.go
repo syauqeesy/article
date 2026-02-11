@@ -16,6 +16,7 @@ type Foundation interface {
 const (
 	FoundationHttp      = "http"
 	FoundationMigration = "migration"
+	FoundationSeeder    = "seeder"
 )
 
 func Boot(foundationType string, arguments []string) error {
@@ -63,6 +64,12 @@ func New(foundationType string, arguments []string) (Foundation, error) {
 
 		if len(arguments) > 1 {
 			foundation.commandArgument = arguments[1]
+		}
+
+		return foundation, nil
+	case FoundationSeeder:
+		foundation := &seederFoundation{
+			configuration: configuration,
 		}
 
 		return foundation, nil

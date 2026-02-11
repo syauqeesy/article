@@ -58,9 +58,9 @@ func NewAccount(email string, name string) (*Account, error) {
 func (m *Account) SetEmail(email string) error {
 	validate := validator.New()
 
-	err := validate.Var(email, "required,email,min=3,max=128")
+	err := validate.Var(email, "required,min=3,max=128")
 	if err != nil {
-		common.CreateException(http.StatusBadRequest, err.Error())
+		return common.CreateException(http.StatusBadRequest, err.Error())
 	}
 
 	m.Email = email
@@ -73,7 +73,7 @@ func (m *Account) SetName(name string) error {
 
 	err := validate.Var(name, "required,min=1,max=256")
 	if err != nil {
-		common.CreateException(http.StatusBadRequest, err.Error())
+		return common.CreateException(http.StatusBadRequest, err.Error())
 	}
 
 	m.Name = name

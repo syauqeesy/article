@@ -9,7 +9,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		log.Fatal("usage: go run main.go [http|migration]")
+		log.Fatal("usage: go run main.go [http|migration|seeder]")
 	}
 
 	if os.Args[1] == foundation.FoundationMigration && len(os.Args) < 3 {
