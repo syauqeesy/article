@@ -20,5 +20,5 @@ func (r *accountPermissionRepository) FindByAccountIdAndPermissionId(ctx context
 		return nil, q.Error
 	}
 
-	return accountPermission, q.Error
+	return accountPermission, nil
 }
