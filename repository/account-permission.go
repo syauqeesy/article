@@ -15,7 +15,7 @@ type accountPermissionRepository repository
 func (r *accountPermissionRepository) FindByAccountIdAndPermissionId(ctx context.Context, accountId string, permissionId string) (*model.AccountPermission, error) {
 	accountPermission := &model.AccountPermission{}
 
-	q := r.Database.WithContext(ctx).Where("account_id = ?", accountId).Where("permission_id", permissionId).First(&accountPermission)
+	q := r.Database.WithContext(ctx).Where("account_id = ?", accountId).Where("permission_id", permissionId).Where("deleted_at IS NULL").First(&accountPermission)
 	if q.Error != nil {
 		return nil, q.Error
 	}

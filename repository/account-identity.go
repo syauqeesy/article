@@ -16,7 +16,7 @@ type accountIdentityRepository repository
 func (r *accountIdentityRepository) FindByProviderAndProviderUserId(ctx context.Context, provider string, providerUserId string) (*model.AccountIdentity, error) {
 	accountIdentity := &model.AccountIdentity{}
 
-	q := r.Database.WithContext(ctx).Where("provider = ?", provider).Where("provider_user_id = ?", providerUserId).First(&accountIdentity)
+	q := r.Database.WithContext(ctx).Where("provider = ?", provider).Where("provider_user_id = ?", providerUserId).Where("deleted_at IS NULL").First(&accountIdentity)
 	if q.Error != nil {
 		return nil, q.Error
 	}

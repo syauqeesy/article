@@ -17,7 +17,7 @@ type accountRepository repository
 func (r *accountRepository) FindById(ctx context.Context, id string) (*model.Account, error) {
 	account := &model.Account{}
 
-	q := r.Database.WithContext(ctx).Where("id = ?", id).First(&account)
+	q := r.Database.WithContext(ctx).Where("id = ?", id).Where("deleted_at IS NULL").First(&account)
 	if q.Error != nil {
 		return nil, q.Error
 	}
@@ -28,7 +28,7 @@ func (r *accountRepository) FindById(ctx context.Context, id string) (*model.Acc
 func (r *accountRepository) FindByEmail(ctx context.Context, email string) (*model.Account, error) {
 	account := &model.Account{}
 
-	q := r.Database.WithContext(ctx).Where("email = ?", email).First(&account)
+	q := r.Database.WithContext(ctx).Where("email = ?", email).Where("deleted_at IS NULL").First(&account)
 	if q.Error != nil {
 		return nil, q.Error
 	}

@@ -15,7 +15,7 @@ type permissionRepository repository
 func (r *permissionRepository) FindByCode(ctx context.Context, code string) (*model.Permission, error) {
 	permission := &model.Permission{}
 
-	q := r.Database.WithContext(ctx).Where("code = ?", code).First(&permission)
+	q := r.Database.WithContext(ctx).Where("code = ?", code).Where("deleted_at IS NULL").First(&permission)
 	if q.Error != nil {
 		return nil, q.Error
 	}
