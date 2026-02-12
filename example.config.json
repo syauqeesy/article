@@ -19,7 +19,7 @@
   },
   "authentication": {
     "secret": "authentication-secret-string",
-    "refresh_secret: "authentication-refresh-secret",
+    "refresh_secret": "authentication-refresh-secret",
     "refresh_pepper": "authentication-refresh-pepper"
   },
   "application": {
