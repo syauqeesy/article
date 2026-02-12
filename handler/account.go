@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"ahmadsyauqi.dev/article/common"
+	"ahmadsyauqi.dev/article/exception"
 )
 
 type accountHandler handler
@@ -70,7 +71,12 @@ func (h *accountHandler) Detail(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *accountHandler) AuthRefresh(w http.ResponseWriter, r *http.Request) {
-	result, err := h.Service.Account.AuthRefresh(r.Context())
+	token, err := r.Cookie("refresh_token")
+	if err != nil {
+		common.HttpErrorHandler(w, exception.Unauthorized, nil)
+	}
+
+	result, err := h.Service.Account.AuthRefresh(r.Context(), token.Value)
 	if err != nil {
 		common.HttpErrorHandler(w, err, nil)
 		return
@@ -86,5 +92,42 @@ func (h *accountHandler) AuthRefresh(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   int((1 * time.Hour).Seconds()),
 	})
 
-	common.WriteHttpResponse(w, http.StatusOK, "Success Refresh Access Token", nil)
+	common.WriteHttpResponse(w, http.StatusOK, "Refresh Access Token Success", nil)
+}
+
+func (h *accountHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	token, err := r.Cookie("refresh_token")
+	if err != nil {
+		common.HttpErrorHandler(w, exception.Unauthorized, nil)
+	}
+
+	err = h.Service.Account.Logout(r.Context(), token.Value)
+	if err != nil {
+		common.HttpErrorHandler(w, err, nil)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+		Expires:  time.Unix(0, 0),
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+		Expires:  time.Unix(0, 0),
+	})
+
+	common.WriteHttpResponse(w, http.StatusOK, "Logout Success", nil)
 }

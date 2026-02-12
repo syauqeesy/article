@@ -6,15 +6,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func IssueAuthenticationToken(subject string, ttl time.Duration, secret string) (*string, *int64, error) {
+func IssueAuthenticationToken(subject string, secret string) (string, error) {
 	now := time.Now().UTC()
-
-	expiresAt := now.Add(ttl).UTC().UnixMilli()
 
 	claims := jwt.MapClaims{
 		"sub":  subject,
 		"iat":  now.UTC(),
-		"exp":  now.Add(ttl).UTC().Unix(),
+		"exp":  now.Add(1 * time.Hour).UTC().Unix(),
 		"type": "access",
 	}
 
@@ -22,9 +20,8 @@ func IssueAuthenticationToken(subject string, ttl time.Duration, secret string) 
 
 	signedAccessToken, err := accessToken.SignedString([]byte(secret))
 	if err != nil {
-		return nil, nil, err
+		return "", err
 	}
 
-	return &signedAccessToken, &expiresAt, nil
+	return signedAccessToken, nil
 }
-

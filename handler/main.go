@@ -31,7 +31,8 @@ func New(mux *http.ServeMux, configuration *configuration.Configuration, service
 	}
 
 	auth := http.NewServeMux()
-	auth.Handle("POST /refresh", middleware.RefreshTokenValidation(configuration)(http.HandlerFunc(h.Account.AuthRefresh)))
+	auth.HandleFunc("POST /refresh", h.Account.AuthRefresh)
+	auth.Handle("POST /logout", middleware.Authentication(configuration)(http.HandlerFunc(h.Account.Logout)))
 
 	oauth := http.NewServeMux()
 	oauth.HandleFunc("GET /{provider}", h.Account.Oauth)

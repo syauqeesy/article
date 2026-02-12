@@ -6,7 +6,6 @@ import (
 
 	"ahmadsyauqi.dev/article/common"
 	"ahmadsyauqi.dev/article/exception"
-	"ahmadsyauqi.dev/article/middleware"
 	"ahmadsyauqi.dev/article/model"
 	"ahmadsyauqi.dev/article/payload"
 	"golang.org/x/oauth2"
@@ -16,7 +15,8 @@ type AccountService interface {
 	Oauth(provider string) (*payload.OauthResponse, error)
 	OauthCallback(ctx context.Context, provider string, code string, state string) (*payload.OauthCallbackResponse, error)
 	Detail(ctx context.Context, id string) (*payload.AccountInfo, error)
-	AuthRefresh(ctx context.Context) (string, error)
+	AuthRefresh(ctx context.Context, token string) (string, error)
+	Logout(ctx context.Context, token string) error
 }
 
 type accountService service
@@ -80,17 +80,17 @@ func (s *accountService) OauthCallback(ctx context.Context, provider string, cod
 		}
 	}
 
-	accessToken, _, err := common.IssueAuthenticationToken(accountIdentity.GetAccountId(), 1*time.Hour, s.Configuration.Authentication.Secret)
+	accessToken, err := common.IssueAuthenticationToken(accountIdentity.GetAccountId(), s.Configuration.Authentication.Secret)
 	if err != nil {
 		return nil, err
 	}
 
-	refreshToken, expiresAt, err := common.IssueAuthenticationToken(accountIdentity.GetAccountId(), 7*24*time.Hour, s.Configuration.Authentication.RefreshSecret)
+	refreshToken, err := common.GenerateRandomState(32)
 	if err != nil {
 		return nil, err
 	}
 
-	refreshTokenModel, err := model.NewRefreshToken(accountIdentity.GetAccountId(), s.Configuration.Authentication.RefreshPepper, *refreshToken, *expiresAt)
+	refreshTokenModel, err := model.NewRefreshToken(accountIdentity.GetAccountId(), s.Configuration.Authentication.RefreshPepper, refreshToken, time.Now().Add(7*24*time.Hour).UTC().UnixMilli())
 	if err != nil {
 		return nil, err
 	}
@@ -102,8 +102,8 @@ func (s *accountService) OauthCallback(ctx context.Context, provider string, cod
 
 	return &payload.OauthCallbackResponse{
 		RedirectUrl:  s.Configuration.Application.Url,
-		Token:        *accessToken,
-		RefreshToken: *refreshToken,
+		Token:        accessToken,
+		RefreshToken: refreshToken,
 	}, nil
 }
 
@@ -116,13 +116,11 @@ func (s *accountService) Detail(ctx context.Context, id string) (*payload.Accoun
 	return account.GetInfo(), nil
 }
 
-func (s *accountService) AuthRefresh(ctx context.Context) (string, error) {
-	token, ok := middleware.GetRefreshToken(ctx)
-	if !ok {
-		return "", exception.Unauthorized
-	}
-
+func (s *accountService) AuthRefresh(ctx context.Context, token string) (string, error) {
 	hashedRefreshToken, err := model.HashRefreshToken(s.Configuration.Authentication.RefreshPepper, token)
+	if err != nil {
+		return "", err
+	}
 
 	refreshToken, err := s.Repository.RefreshToken.FindByToken(ctx, hashedRefreshToken)
 	if err != nil {
@@ -138,10 +136,29 @@ func (s *accountService) AuthRefresh(ctx context.Context) (string, error) {
 		return "", exception.Unauthorized
 	}
 
-	accessToken, _, err := common.IssueAuthenticationToken(refreshToken.GetAccountId(), 1*time.Hour, s.Configuration.Authentication.Secret)
+	accessToken, err := common.IssueAuthenticationToken(refreshToken.GetAccountId(), s.Configuration.Authentication.Secret)
 	if err != nil {
 		return "", err
 	}
 
-	return *accessToken, nil
+	return accessToken, nil
+}
+
+func (s *accountService) Logout(ctx context.Context, token string) error {
+	hashedRefreshToken, err := model.HashRefreshToken(s.Configuration.Authentication.RefreshPepper, token)
+	if err != nil {
+		return err
+	}
+
+	refreshToken, err := s.Repository.RefreshToken.FindByToken(ctx, hashedRefreshToken)
+	if err != nil {
+		return exception.Unauthorized
+	}
+
+	err = s.Repository.RefreshToken.Delete(ctx, refreshToken)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
