@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"ahmadsyauqi.dev/article/common"
@@ -21,6 +22,8 @@ func GetSubject(ctx context.Context) (string, bool) {
 func Authentication(configuration *configuration.Configuration) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+			fmt.Println(r.Method, r.URL.Path)
 			accessTokenCookie, err := r.Cookie("access_token")
 			if err != nil || accessTokenCookie.Value == "" {
 				common.HttpErrorHandler(w, exception.Unauthorized, nil)

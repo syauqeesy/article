@@ -23,14 +23,14 @@ type Configuration struct {
 		ClientId     string `json:"client_id"`
 		ClientSecret string `json:"client_secret"`
 		RedirectUrl  string `json:"redirect_url"`
-	}
+	} `json:"oauth"`
 	Authentication struct {
 		Secret        string `json:"secret"`
 		RefreshPepper string `json:"refresh_pepper"`
-	}
+	} `json:"authentication"`
 	Application struct {
 		Url string `json:"url"`
-	}
+	} `json:"application"`
 }
 
 func Load(path string) (*Configuration, error) {

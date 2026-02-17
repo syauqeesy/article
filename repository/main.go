@@ -12,6 +12,8 @@ type Repository struct {
 	RefreshToken      RefreshTokenRepository
 	Permission        PermissionRepository
 	AccountPermission AccountPermissionRepository
+	Article           ArticleRepository
+	ArticleContent    ArticleContentRepository
 }
 
 func New(database *gorm.DB) *Repository {
@@ -25,5 +27,7 @@ func New(database *gorm.DB) *Repository {
 		RefreshToken:      (*refreshTokenRepository)(repository),
 		Permission:        (*permissionRepository)(repository),
 		AccountPermission: (*accountPermissionRepository)(repository),
+		Article:           (*articleRepository)(repository),
+		ArticleContent:    (*articleContentRepository)(repository),
 	}
 }

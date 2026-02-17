@@ -11,7 +11,8 @@ type service struct {
 }
 
 type Service struct {
-	Account AccountService
+	Account          AccountService
+	DashboardArticle DashboardArticleService
 }
 
 func New(configuration *configuration.Configuration, repository *repository.Repository) *Service {
@@ -21,6 +22,7 @@ func New(configuration *configuration.Configuration, repository *repository.Repo
 	}
 
 	return &Service{
-		Account: (*accountService)(svc),
+		Account:          (*accountService)(svc),
+		DashboardArticle: (*dashboardArticleService)(svc),
 	}
 }
