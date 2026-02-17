@@ -51,6 +51,15 @@ func (s *dashboardArticleService) Create(ctx context.Context, request *payload.C
 		return nil, exception.Unauthorized
 	}
 
+	existingSlug, err := s.Repository.ArticleContent.FindBySlug(ctx, request.Slug)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, err
+	}
+
+	if existingSlug != nil {
+		return nil, exception.SlugAlreadyExists
+	}
+
 	article, err := model.NewArticle(accountId)
 	if err != nil {
 		return nil, err
