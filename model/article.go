@@ -150,3 +150,11 @@ func (m *Article) GetViews() int32 {
 func (m *Article) GetCreatedAt() int64 {
 	return m.CreatedAt
 }
+
+func (m *Article) GetAccount() *Account {
+	return m.Account
+}
+
+func (m *Article) GetArticleContent() *ArticleContent {
+	return m.ArticleContent
+}

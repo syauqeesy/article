@@ -18,6 +18,7 @@ type handler struct {
 type Handler struct {
 	Account          *accountHandler
 	DashboardArticle *dashboardArticleHandler
+	Article          *articleHandler
 }
 
 func New(mux *http.ServeMux, configuration *configuration.Configuration, service *service.Service, repository *repository.Repository) *Handler {
@@ -30,6 +31,7 @@ func New(mux *http.ServeMux, configuration *configuration.Configuration, service
 	h := &Handler{
 		Account:          (*accountHandler)(handler),
 		DashboardArticle: (*dashboardArticleHandler)(handler),
+		Article:          (*articleHandler)(handler),
 	}
 
 	auth := http.NewServeMux()
@@ -53,9 +55,14 @@ func New(mux *http.ServeMux, configuration *configuration.Configuration, service
 	articleDashboard.Handle("DELETE /{id}", middleware.HasPermission("article.delete", repository.Permission, repository.AccountPermission)(http.HandlerFunc(h.DashboardArticle.Delete)))
 	articleDashboard.Handle("POST /status/{id}", middleware.HasPermission("article.status", repository.Permission, repository.AccountPermission)(http.HandlerFunc(h.DashboardArticle.ChangeStatus)))
 
+	article := http.NewServeMux()
+	article.HandleFunc("GET /", h.Article.List)
+	article.HandleFunc("GET /{slug}", h.Article.Show)
+
 	mux.Handle("/auth/", http.StripPrefix("/auth", auth))
 	mux.Handle("/account/", middleware.Authentication(configuration)(http.StripPrefix("/account", account)))
 	mux.Handle("/dashboard/article/", middleware.Authentication(configuration)(http.StripPrefix("/dashboard/article", articleDashboard)))
+	mux.Handle("/article/", http.StripPrefix("/article", article))
 
 	return h
 }

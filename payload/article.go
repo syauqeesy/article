@@ -26,3 +26,9 @@ type UpdateArticleContent struct {
 type ChangeArticleStatus struct {
 	Status string `json:"status"`
 }
+
+type ArticlePaginationResponse struct {
+	Articles  []*ArticleInfo `json:"articles"`
+	Page      int            `json:"page"`
+	TotalPage int            `json:"total_page"`
+}
