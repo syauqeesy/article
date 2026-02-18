@@ -4,12 +4,13 @@ import (
 	"context"
 
 	"ahmadsyauqi.dev/article/model"
+	"gorm.io/gorm"
 )
 
 type AccountRepository interface {
 	FindById(ctx context.Context, id string) (*model.Account, error)
 	FindByEmail(ctx context.Context, email string) (*model.Account, error)
-	Create(ctx context.Context, account *model.Account) error
+	CreateTx(ctx context.Context, tx *gorm.DB, account *model.Account) error
 }
 
 type accountRepository repository
@@ -36,8 +37,8 @@ func (r *accountRepository) FindByEmail(ctx context.Context, email string) (*mod
 	return account, nil
 }
 
-func (r *accountRepository) Create(ctx context.Context, account *model.Account) error {
-	q := r.Database.WithContext(ctx).Create(&account)
+func (r *accountRepository) CreateTx(ctx context.Context, tx *gorm.DB, account *model.Account) error {
+	q := tx.WithContext(ctx).Create(&account)
 	if q.Error != nil {
 		return q.Error
 	}

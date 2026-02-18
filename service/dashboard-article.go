@@ -70,17 +70,21 @@ func (s *dashboardArticleService) Create(ctx context.Context, request *payload.C
 		return nil, err
 	}
 
-	err = s.Repository.Article.Create(ctx, article)
-	if err != nil {
-		return nil, err
-	}
+	err = s.Repository.Tx.WithTx(ctx, func(tx *gorm.DB) error {
+		var err error
 
-	err = article.SetArticleContent(articleContent)
-	if err != nil {
-		return nil, err
-	}
+		err = s.Repository.Article.CreateTx(ctx, tx, article)
+		if err != nil {
+			return err
+		}
 
-	err = s.Repository.ArticleContent.Create(ctx, articleContent)
+		err = s.Repository.ArticleContent.CreateTx(ctx, tx, articleContent)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -91,6 +95,11 @@ func (s *dashboardArticleService) Create(ctx context.Context, request *payload.C
 	}
 
 	err = article.SetAccount(account)
+	if err != nil {
+		return nil, err
+	}
+
+	err = article.SetArticleContent(articleContent)
 	if err != nil {
 		return nil, err
 	}
@@ -147,12 +156,21 @@ func (s *dashboardArticleService) Delete(ctx context.Context, id string) error {
 		return exception.ArticleNotFound
 	}
 
-	err = s.Repository.ArticleContent.Delete(ctx, article.ArticleContent)
-	if err != nil {
-		return err
-	}
+	err = s.Repository.Tx.WithTx(ctx, func(tx *gorm.DB) error {
+		var err error
 
-	err = s.Repository.Article.Delete(ctx, article)
+		err = s.Repository.ArticleContent.DeleteTx(ctx, tx, article.ArticleContent)
+		if err != nil {
+			return err
+		}
+
+		err = s.Repository.Article.DeleteTx(ctx, tx, article)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 	if err != nil {
 		return err
 	}

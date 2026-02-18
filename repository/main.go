@@ -14,6 +14,7 @@ type Repository struct {
 	AccountPermission AccountPermissionRepository
 	Article           ArticleRepository
 	ArticleContent    ArticleContentRepository
+	Tx                TxRepository
 }
 
 func New(database *gorm.DB) *Repository {
@@ -29,5 +30,6 @@ func New(database *gorm.DB) *Repository {
 		AccountPermission: (*accountPermissionRepository)(repository),
 		Article:           (*articleRepository)(repository),
 		ArticleContent:    (*articleContentRepository)(repository),
+		Tx:                (*txRepository)(repository),
 	}
 }

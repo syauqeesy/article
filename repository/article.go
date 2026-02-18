@@ -4,14 +4,15 @@ import (
 	"context"
 
 	"ahmadsyauqi.dev/article/model"
+	"gorm.io/gorm"
 )
 
 type ArticleRepository interface {
 	Find(ctx context.Context) ([]*model.Article, error)
 	FindById(ctx context.Context, id string) (*model.Article, error)
-	Create(ctx context.Context, article *model.Article) error
+	CreateTx(ctx context.Context, tx *gorm.DB, article *model.Article) error
 	Update(ctx context.Context, article *model.Article) error
-	Delete(ctx context.Context, article *model.Article) error
+	DeleteTx(ctx context.Context, tx *gorm.DB, article *model.Article) error
 }
 
 type articleRepository repository
@@ -38,8 +39,8 @@ func (r *articleRepository) FindById(ctx context.Context, id string) (*model.Art
 	return article, nil
 }
 
-func (r *articleRepository) Create(ctx context.Context, article *model.Article) error {
-	q := r.Database.WithContext(ctx).Create(article)
+func (r *articleRepository) CreateTx(ctx context.Context, tx *gorm.DB, article *model.Article) error {
+	q := tx.WithContext(ctx).Create(article)
 	if q.Error != nil {
 		return q.Error
 	}
@@ -48,7 +49,10 @@ func (r *articleRepository) Create(ctx context.Context, article *model.Article) 
 }
 
 func (r *articleRepository) Update(ctx context.Context, article *model.Article) error {
-	article.SetUpdatedAt()
+	err := article.SetUpdatedAt()
+	if err != nil {
+		return err
+	}
 
 	q := r.Database.WithContext(ctx).Save(&article)
 	if q.Error != nil {
@@ -58,12 +62,20 @@ func (r *articleRepository) Update(ctx context.Context, article *model.Article) 
 	return nil
 }
 
-func (r *articleRepository) Delete(ctx context.Context, article *model.Article) error {
-	article.SetUpdatedAt()
+func (r *articleRepository) DeleteTx(ctx context.Context, tx *gorm.DB, article *model.Article) error {
+	var err error
 
-	article.SetDeletedAt()
+	err = article.SetUpdatedAt()
+	if err != nil {
+		return err
+	}
 
-	q := r.Database.WithContext(ctx).Save(&article)
+	err = article.SetDeletedAt()
+	if err != nil {
+		return err
+	}
+
+	q := tx.WithContext(ctx).Save(&article)
 	if q.Error != nil {
 		return q.Error
 	}

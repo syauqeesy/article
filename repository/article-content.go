@@ -4,14 +4,15 @@ import (
 	"context"
 
 	"ahmadsyauqi.dev/article/model"
+	"gorm.io/gorm"
 )
 
 type ArticleContentRepository interface {
 	FindById(ctx context.Context, id string) (*model.ArticleContent, error)
 	FindBySlug(ctx context.Context, slug string) (*model.ArticleContent, error)
-	Create(ctx context.Context, articleContent *model.ArticleContent) error
+	CreateTx(ctx context.Context, tx *gorm.DB, articleContent *model.ArticleContent) error
 	Update(ctx context.Context, articleContent *model.ArticleContent) error
-	Delete(ctx context.Context, articleContent *model.ArticleContent) error
+	DeleteTx(ctx context.Context, tx *gorm.DB, articleContent *model.ArticleContent) error
 }
 
 type articleContentRepository repository
@@ -38,8 +39,8 @@ func (r *articleContentRepository) FindBySlug(ctx context.Context, slug string) 
 	return articleContent, nil
 }
 
-func (r *articleContentRepository) Create(ctx context.Context, articleContent *model.ArticleContent) error {
-	q := r.Database.WithContext(ctx).Create(articleContent)
+func (r *articleContentRepository) CreateTx(ctx context.Context, tx *gorm.DB, articleContent *model.ArticleContent) error {
+	q := tx.WithContext(ctx).Create(articleContent)
 	if q.Error != nil {
 		return q.Error
 	}
@@ -48,7 +49,10 @@ func (r *articleContentRepository) Create(ctx context.Context, articleContent *m
 }
 
 func (r *articleContentRepository) Update(ctx context.Context, articleContent *model.ArticleContent) error {
-	articleContent.SetUpdatedAt()
+	err := articleContent.SetUpdatedAt()
+	if err != nil {
+		return err
+	}
 
 	q := r.Database.WithContext(ctx).Save(&articleContent)
 	if q.Error != nil {
@@ -58,12 +62,20 @@ func (r *articleContentRepository) Update(ctx context.Context, articleContent *m
 	return nil
 }
 
-func (r *articleContentRepository) Delete(ctx context.Context, articleContent *model.ArticleContent) error {
-	articleContent.SetUpdatedAt()
+func (r *articleContentRepository) DeleteTx(ctx context.Context, tx *gorm.DB, articleContent *model.ArticleContent) error {
+	var err error
 
-	articleContent.SetDeletedAt()
+	err = articleContent.SetUpdatedAt()
+	if err != nil {
+		return err
+	}
 
-	q := r.Database.WithContext(ctx).Save(&articleContent)
+	err = articleContent.SetDeletedAt()
+	if err != nil {
+		return err
+	}
+
+	q := tx.WithContext(ctx).Save(&articleContent)
 	if q.Error != nil {
 		return q.Error
 	}

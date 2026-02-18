@@ -9,6 +9,7 @@ import (
 	"ahmadsyauqi.dev/article/model"
 	"ahmadsyauqi.dev/article/payload"
 	"golang.org/x/oauth2"
+	"gorm.io/gorm"
 )
 
 type AccountService interface {
@@ -57,45 +58,55 @@ func (s *accountService) OauthCallback(ctx context.Context, provider string, cod
 		return nil, err
 	}
 
-	accountIdentity, _ := s.Repository.AccountIdentity.FindByProviderAndProviderUserId(ctx, provider, subject)
-	if accountIdentity == nil {
-		account, err := model.NewAccount(email, name)
-		if err != nil {
-			return nil, err
+	var accessToken string
+	var refreshToken string
+
+	err = s.Repository.Tx.WithTx(ctx, func(tx *gorm.DB) error {
+		accountIdentity, _ := s.Repository.AccountIdentity.FindByProviderAndProviderUserId(ctx, provider, subject)
+		if accountIdentity == nil {
+			account, err := model.NewAccount(email, name)
+			if err != nil {
+				return err
+			}
+
+			err = s.Repository.Account.CreateTx(ctx, tx, account)
+			if err != nil {
+				return err
+			}
+
+			accountIdentity, err = model.NewAccountIdentity(account.GetId(), provider, subject)
+			if err != nil {
+				return err
+			}
+
+			err = s.Repository.AccountIdentity.CreateTx(ctx, tx, accountIdentity)
+			if err != nil {
+				return err
+			}
 		}
 
-		err = s.Repository.Account.Create(ctx, account)
+		accessToken, err = common.IssueAuthenticationToken(accountIdentity.GetAccountId(), s.Configuration.Authentication.Secret)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		accountIdentity, err = model.NewAccountIdentity(account.GetId(), provider, subject)
+		refreshToken, err = common.GenerateRandomState(32)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		err = s.Repository.AccountIdentity.Create(ctx, accountIdentity)
+		refreshTokenModel, err := model.NewRefreshToken(accountIdentity.GetAccountId(), s.Configuration.Authentication.RefreshPepper, refreshToken, time.Now().Add(7*24*time.Hour).UTC().UnixMilli())
 		if err != nil {
-			return nil, err
+			return err
 		}
-	}
 
-	accessToken, err := common.IssueAuthenticationToken(accountIdentity.GetAccountId(), s.Configuration.Authentication.Secret)
-	if err != nil {
-		return nil, err
-	}
+		err = s.Repository.RefreshToken.CreateTx(ctx, tx, refreshTokenModel)
+		if err != nil {
+			return err
+		}
 
-	refreshToken, err := common.GenerateRandomState(32)
-	if err != nil {
-		return nil, err
-	}
-
-	refreshTokenModel, err := model.NewRefreshToken(accountIdentity.GetAccountId(), s.Configuration.Authentication.RefreshPepper, refreshToken, time.Now().Add(7*24*time.Hour).UTC().UnixMilli())
-	if err != nil {
-		return nil, err
-	}
-
-	err = s.Repository.RefreshToken.Create(ctx, refreshTokenModel)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}

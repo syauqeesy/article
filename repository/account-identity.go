@@ -4,11 +4,12 @@ import (
 	"context"
 
 	"ahmadsyauqi.dev/article/model"
+	"gorm.io/gorm"
 )
 
 type AccountIdentityRepository interface {
 	FindByProviderAndProviderUserId(ctx context.Context, provider string, providerUserId string) (*model.AccountIdentity, error)
-	Create(ctx context.Context, accountIdentity *model.AccountIdentity) error
+	CreateTx(ctx context.Context, tx *gorm.DB, accountIdentity *model.AccountIdentity) error
 }
 
 type accountIdentityRepository repository
@@ -24,8 +25,8 @@ func (r *accountIdentityRepository) FindByProviderAndProviderUserId(ctx context.
 	return accountIdentity, nil
 }
 
-func (r *accountIdentityRepository) Create(ctx context.Context, accountIdentity *model.AccountIdentity) error {
-	q := r.Database.WithContext(ctx).Create(accountIdentity)
+func (r *accountIdentityRepository) CreateTx(ctx context.Context, tx *gorm.DB, accountIdentity *model.AccountIdentity) error {
+	q := tx.WithContext(ctx).Create(accountIdentity)
 	if q.Error != nil {
 		return q.Error
 	}

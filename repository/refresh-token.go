@@ -4,11 +4,12 @@ import (
 	"context"
 
 	"ahmadsyauqi.dev/article/model"
+	"gorm.io/gorm"
 )
 
 type RefreshTokenRepository interface {
 	FindByToken(ctx context.Context, token string) (*model.RefreshToken, error)
-	Create(ctx context.Context, refreshToken *model.RefreshToken) error
+	CreateTx(ctx context.Context, tx *gorm.DB, refreshToken *model.RefreshToken) error
 	Delete(ctx context.Context, refreshToken *model.RefreshToken) error
 }
 
@@ -25,8 +26,8 @@ func (r *refreshTokenRepository) FindByToken(ctx context.Context, token string) 
 	return refreshToken, nil
 }
 
-func (r *refreshTokenRepository) Create(ctx context.Context, refreshToken *model.RefreshToken) error {
-	q := r.Database.WithContext(ctx).Create(refreshToken)
+func (r *refreshTokenRepository) CreateTx(ctx context.Context, tx *gorm.DB, refreshToken *model.RefreshToken) error {
+	q := tx.WithContext(ctx).Create(refreshToken)
 	if q.Error != nil {
 		return q.Error
 	}
@@ -35,9 +36,17 @@ func (r *refreshTokenRepository) Create(ctx context.Context, refreshToken *model
 }
 
 func (r *refreshTokenRepository) Delete(ctx context.Context, refreshToken *model.RefreshToken) error {
-	refreshToken.SetUpdatedAt()
+	var err error
 
-	refreshToken.SetDeletedAt()
+	err = refreshToken.SetUpdatedAt()
+	if err != nil {
+		return err
+	}
+
+	err = refreshToken.SetDeletedAt()
+	if err != nil {
+		return err
+	}
 
 	q := r.Database.WithContext(ctx).Save(&refreshToken)
 	if q.Error != nil {
