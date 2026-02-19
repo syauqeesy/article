@@ -34,35 +34,30 @@ func New(mux *http.ServeMux, configuration *configuration.Configuration, service
 		Article:          (*articleHandler)(handler),
 	}
 
-	auth := http.NewServeMux()
-	auth.HandleFunc("POST /refresh", h.Account.AuthRefresh)
-	auth.Handle("POST /logout", middleware.Authentication(configuration)(http.HandlerFunc(h.Account.Logout)))
+	authenticationMiddleware := middleware.Authentication(configuration)
+	hasPermissionMiddleware := func(permission string, handlerFunction http.HandlerFunc) http.Handler {
+		hasPermissionMiddleware := middleware.HasPermission(permission, repository.Permission, repository.AccountPermission)
 
-	oauth := http.NewServeMux()
-	oauth.HandleFunc("GET /{provider}", h.Account.Oauth)
-	oauth.HandleFunc("GET /{provider}/callback", h.Account.OauthCallback)
+		return authenticationMiddleware(hasPermissionMiddleware(handlerFunction))
+	}
 
-	auth.Handle("/oauth/", http.StripPrefix("/oauth", oauth))
+	mux.HandleFunc("POST /auth/refresh", h.Account.AuthRefresh)
+	mux.Handle("POST /auth/logout", authenticationMiddleware(http.HandlerFunc(h.Account.Logout)))
 
-	account := http.NewServeMux()
-	account.HandleFunc("GET /{id}", h.Account.Detail)
+	mux.HandleFunc("GET /auth/oauth/{provider}", h.Account.Oauth)
+	mux.HandleFunc("GET /auth/oauth/{provider}/callback", h.Account.OauthCallback)
 
-	articleDashboard := http.NewServeMux()
-	articleDashboard.Handle("GET /", middleware.HasPermission("article.list", repository.Permission, repository.AccountPermission)(http.HandlerFunc(h.DashboardArticle.List)))
-	articleDashboard.Handle("GET /{id}", middleware.HasPermission("article.show", repository.Permission, repository.AccountPermission)(http.HandlerFunc(h.DashboardArticle.Show)))
-	articleDashboard.Handle("POST /", middleware.HasPermission("article.create", repository.Permission, repository.AccountPermission)(http.HandlerFunc(h.DashboardArticle.Create)))
-	articleDashboard.Handle("PUT /{id}", middleware.HasPermission("article.update", repository.Permission, repository.AccountPermission)(http.HandlerFunc(h.DashboardArticle.Update)))
-	articleDashboard.Handle("DELETE /{id}", middleware.HasPermission("article.delete", repository.Permission, repository.AccountPermission)(http.HandlerFunc(h.DashboardArticle.Delete)))
-	articleDashboard.Handle("POST /status/{id}", middleware.HasPermission("article.status", repository.Permission, repository.AccountPermission)(http.HandlerFunc(h.DashboardArticle.ChangeStatus)))
+	mux.Handle("GET /account/{id}", authenticationMiddleware(http.HandlerFunc(h.Account.Detail)))
 
-	article := http.NewServeMux()
-	article.HandleFunc("GET /", h.Article.List)
-	article.HandleFunc("GET /{slug}", h.Article.Show)
+	mux.Handle("GET /dashboard/article", hasPermissionMiddleware("article.list", http.HandlerFunc(h.DashboardArticle.List)))
+	mux.Handle("GET /dashboard/article/{id}", hasPermissionMiddleware("article.show", http.HandlerFunc(h.DashboardArticle.Show)))
+	mux.Handle("POST /dashboard/article", hasPermissionMiddleware("article.create", http.HandlerFunc(h.DashboardArticle.Create)))
+	mux.Handle("PUT /dashboard/article/{id}", hasPermissionMiddleware("article.update", http.HandlerFunc(h.DashboardArticle.Update)))
+	mux.Handle("DELETE /dashboard/article/{id}", hasPermissionMiddleware("article.delete", http.HandlerFunc(h.DashboardArticle.Delete)))
+	mux.Handle("POST /dashboard/article/status/{id}", hasPermissionMiddleware("article.status", http.HandlerFunc(h.DashboardArticle.ChangeStatus)))
 
-	mux.Handle("/auth/", http.StripPrefix("/auth", auth))
-	mux.Handle("/account/", middleware.Authentication(configuration)(http.StripPrefix("/account", account)))
-	mux.Handle("/dashboard/article/", middleware.Authentication(configuration)(http.StripPrefix("/dashboard/article", articleDashboard)))
-	mux.Handle("/article/", http.StripPrefix("/article", article))
+	mux.HandleFunc("GET /article", h.Article.List)
+	mux.HandleFunc("GET /article/{slug}", h.Article.Show)
 
 	return h
 }
