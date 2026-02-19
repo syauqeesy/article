@@ -34,3 +34,13 @@ func (h *articleHandler) Show(w http.ResponseWriter, r *http.Request) {
 
 	common.WriteHttpResponse(w, http.StatusOK, "Show Article Success", result)
 }
+
+func (h *articleHandler) View(w http.ResponseWriter, r *http.Request) {
+	err := h.Service.Article.View(r.Context(), r.PathValue("id"))
+	if err != nil {
+		common.HttpErrorHandler(w, err, nil)
+		return
+	}
+
+	common.WriteHttpResponse(w, http.StatusOK, "View Article Success", nil)
+}

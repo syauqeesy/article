@@ -2,11 +2,14 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
+	"ahmadsyauqi.dev/article/common"
 	"ahmadsyauqi.dev/article/configuration"
 	"ahmadsyauqi.dev/article/middleware"
 	"ahmadsyauqi.dev/article/repository"
 	"ahmadsyauqi.dev/article/service"
+	"golang.org/x/time/rate"
 )
 
 type handler struct {
@@ -40,6 +43,7 @@ func New(mux *http.ServeMux, configuration *configuration.Configuration, service
 
 		return authenticationMiddleware(hasPermissionMiddleware(handlerFunction))
 	}
+	viewArticleRateLimit := common.NewIPRateLimiter(rate.Limit(1), 1, 10*time.Minute, true)
 
 	mux.HandleFunc("POST /auth/refresh", h.Account.AuthRefresh)
 	mux.Handle("POST /auth/logout", authenticationMiddleware(http.HandlerFunc(h.Account.Logout)))
@@ -58,6 +62,7 @@ func New(mux *http.ServeMux, configuration *configuration.Configuration, service
 
 	mux.HandleFunc("GET /article", h.Article.List)
 	mux.HandleFunc("GET /article/{slug}", h.Article.Show)
+	mux.Handle("POST /article/view/{id}", viewArticleRateLimit.Middleware(http.HandlerFunc(h.Article.View)))
 
 	return h
 }

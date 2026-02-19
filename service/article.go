@@ -10,6 +10,7 @@ import (
 type ArticleService interface {
 	List(ctx context.Context, page int) (*payload.ArticlePaginationResponse, error)
 	Show(ctx context.Context, slug string) (*payload.ArticleInfo, error)
+	View(ctx context.Context, id string) error
 }
 
 type articleService service
@@ -40,4 +41,23 @@ func (s *articleService) Show(ctx context.Context, slug string) (*payload.Articl
 	}
 
 	return article.GetInfo(), nil
+}
+
+func (s *articleService) View(ctx context.Context, id string) error {
+	article, err := s.Repository.Article.FindById(ctx, id)
+	if err != nil {
+		return exception.ArticleNotFound
+	}
+
+	err = article.SetViews()
+	if err != nil {
+		return err
+	}
+
+	err = s.Repository.Article.Update(ctx, article)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
