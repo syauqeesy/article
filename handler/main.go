@@ -43,7 +43,7 @@ func New(mux *http.ServeMux, configuration *configuration.Configuration, service
 
 		return authenticationMiddleware(hasPermissionMiddleware(handlerFunction))
 	}
-	viewArticleRateLimit := common.NewIPRateLimiter(rate.Limit(1), 1, 10*time.Minute, true)
+	viewArticleRateLimit := common.NewIPRateLimiter(rate.Every(2*time.Hour), 1, 2*time.Hour, true)
 
 	mux.HandleFunc("POST /auth/refresh", h.Account.AuthRefresh)
 	mux.Handle("POST /auth/logout", authenticationMiddleware(http.HandlerFunc(h.Account.Logout)))
