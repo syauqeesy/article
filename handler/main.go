@@ -19,9 +19,10 @@ type handler struct {
 }
 
 type Handler struct {
-	Account          *accountHandler
-	DashboardArticle *dashboardArticleHandler
-	Article          *articleHandler
+	Account               *accountHandler
+	DashboardArticle      *dashboardArticleHandler
+	DashboardArticleAsset *dashboardArticleAssetHandler
+	Article               *articleHandler
 }
 
 func New(mux *http.ServeMux, configuration *configuration.Configuration, service *service.Service, repository *repository.Repository) *Handler {
@@ -32,9 +33,10 @@ func New(mux *http.ServeMux, configuration *configuration.Configuration, service
 	}
 
 	h := &Handler{
-		Account:          (*accountHandler)(handler),
-		DashboardArticle: (*dashboardArticleHandler)(handler),
-		Article:          (*articleHandler)(handler),
+		Account:               (*accountHandler)(handler),
+		DashboardArticle:      (*dashboardArticleHandler)(handler),
+		DashboardArticleAsset: (*dashboardArticleAssetHandler)(handler),
+		Article:               (*articleHandler)(handler),
 	}
 
 	authenticationMiddleware := middleware.Authentication(configuration)
@@ -59,6 +61,10 @@ func New(mux *http.ServeMux, configuration *configuration.Configuration, service
 	mux.Handle("PUT /dashboard/article/{id}", hasPermissionMiddleware("article.update", http.HandlerFunc(h.DashboardArticle.Update)))
 	mux.Handle("DELETE /dashboard/article/{id}", hasPermissionMiddleware("article.delete", http.HandlerFunc(h.DashboardArticle.Delete)))
 	mux.Handle("POST /dashboard/article/status/{id}", hasPermissionMiddleware("article.status", http.HandlerFunc(h.DashboardArticle.ChangeStatus)))
+
+	mux.Handle("POST /dashboard/article/asset", hasPermissionMiddleware("article-asset.sign", http.HandlerFunc(h.DashboardArticleAsset.Create)))
+	mux.Handle("PATCH /dashboard/article/asset/{id}", hasPermissionMiddleware("article-asset.complete", http.HandlerFunc(h.DashboardArticleAsset.Complete)))
+	mux.Handle("DELETE /dashboard/article/asset/{id}", hasPermissionMiddleware("article-asset.delete", http.HandlerFunc(h.DashboardArticleAsset.Delete)))
 
 	mux.HandleFunc("GET /article", h.Article.List)
 	mux.HandleFunc("GET /article/{slug}", h.Article.Show)

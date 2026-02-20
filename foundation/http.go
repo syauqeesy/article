@@ -22,6 +22,7 @@ type httpFoundation struct {
 	repository    *repository.Repository
 	service       *service.Service
 	handler       *handler.Handler
+	storage       *common.Storage
 }
 
 func (f *httpFoundation) Setup() error {
@@ -43,14 +44,20 @@ func (f *httpFoundation) Setup() error {
 
 	f.repository = repository.New(f.database.database)
 
-	f.service = service.New(f.configuration, f.repository)
+	f.storage, err = common.NewStorage(context.Background(), f.configuration.Storage.Bucket)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
+
+	f.service = service.New(f.configuration, f.repository, f.storage)
 
 	f.handler = handler.New(f.mux, f.configuration, f.service, f.repository)
 
 	var t time.Time
 	result := f.database.database.Raw("SELECT NOW() AS THIS_MOMENT").Scan(&t)
 	if result.Error != nil {
-		log.Fatal("database error : ", result.Error)
+		log.Fatal("Database error : ", result.Error)
 	}
 
 	f.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +73,7 @@ func (f *httpFoundation) Setup() error {
 }
 
 func (f *httpFoundation) Boot() error {
-	fmt.Println("http server started")
+	fmt.Println("Http server started")
 
 	err := f.server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
@@ -82,7 +89,12 @@ func (f *httpFoundation) Shutdown() error {
 		return err
 	}
 
-	fmt.Println("shutting down http server...")
+	err = f.storage.Close()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Shutting down http server...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -92,7 +104,7 @@ func (f *httpFoundation) Shutdown() error {
 		return err
 	}
 
-	fmt.Println("http server exited")
+	fmt.Println("Http server exited")
 
 	return nil
 }

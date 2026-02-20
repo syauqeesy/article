@@ -23,5 +23,8 @@
   },
   "application": {
     "url": "application-url"
+  },
+  "storage": {
+    "bucket": "ahmadsyauqi-dev"
   }
 }

@@ -31,6 +31,9 @@ type Configuration struct {
 	Application struct {
 		Url string `json:"url"`
 	} `json:"application"`
+	Storage struct {
+		Bucket string `json:"bucket"`
+	} `json:"storage"`
 }
 
 func Load(path string) (*Configuration, error) {

@@ -30,10 +30,10 @@ func (f *databaseFoundation) Setup() error {
 func (f *databaseFoundation) Boot() (err error) {
 	f.database, err = gorm.Open(postgres.Open(f.databaseConnectionUrl), f.databaseConfiguration)
 	if err != nil {
-		return fmt.Errorf("failed to connect to database: %w", err)
+		return fmt.Errorf("Failed to connect to database: %w", err)
 	}
 
-	fmt.Println("connected to database")
+	fmt.Println("Connected to database")
 
 	return nil
 }
@@ -41,15 +41,15 @@ func (f *databaseFoundation) Boot() (err error) {
 func (f *databaseFoundation) Shutdown() error {
 	database, err := f.database.DB()
 	if err != nil {
-		return fmt.Errorf("failed to get database object: %w", err)
+		return fmt.Errorf("Failed to get database object: %w", err)
 	}
 
 	err = database.Close()
 	if err != nil {
-		return fmt.Errorf("failed to close connection: %w", err)
+		return fmt.Errorf("Failed to close connection: %w", err)
 	}
 
-	fmt.Println("database connection closed.")
+	fmt.Println("Database connection closed.")
 
 	return nil
 }

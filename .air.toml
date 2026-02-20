@@ -3,3 +3,5 @@ cmd = "go build -o ./tmp/app ."
 bin = "./tmp/app"
 exclude_dir = ["application"]
 
+[run]
+include_envs = ["GOOGLE_APPLICATION_CREDENTIALS=../credential.json"]

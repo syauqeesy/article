@@ -74,6 +74,9 @@ func (f *seederFoundation) Boot() error {
 		{"article.update", "Update Article"},
 		{"article.delete", "Delete Article"},
 		{"article.status", "Status Article"},
+		{"article-asset.sign", "Sign Upload Url"},
+		{"article-asset.complete", "Complete Upload"},
+		{"article-asset.delete", "Delete Asset"},
 	}
 
 	for _, value := range values {

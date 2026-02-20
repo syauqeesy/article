@@ -1,6 +1,7 @@
 package service
 
 import (
+	"ahmadsyauqi.dev/article/common"
 	"ahmadsyauqi.dev/article/configuration"
 	"ahmadsyauqi.dev/article/repository"
 )
@@ -8,23 +9,27 @@ import (
 type service struct {
 	Configuration *configuration.Configuration
 	Repository    *repository.Repository
+	Storage       *common.Storage
 }
 
 type Service struct {
-	Account          AccountService
-	DashboardArticle DashboardArticleService
-	Article          ArticleService
+	Account                AccountService
+	DashboardArticle       DashboardArticleService
+	DashbboardArticleAsset DashboardArticleAssetService
+	Article                ArticleService
 }
 
-func New(configuration *configuration.Configuration, repository *repository.Repository) *Service {
+func New(configuration *configuration.Configuration, repository *repository.Repository, storage *common.Storage) *Service {
 	svc := &service{
 		Configuration: configuration,
 		Repository:    repository,
+		Storage:       storage,
 	}
 
 	return &Service{
-		Account:          (*accountService)(svc),
-		DashboardArticle: (*dashboardArticleService)(svc),
-		Article:          (*articleService)(svc),
+		Account:                (*accountService)(svc),
+		DashboardArticle:       (*dashboardArticleService)(svc),
+		DashbboardArticleAsset: (*dashboardArticleAssetService)(svc),
+		Article:                (*articleService)(svc),
 	}
 }
