@@ -11,4 +11,3 @@ CREATE TABLE IF NOT EXISTS article_assets (
   PRIMARY KEY (id),
   FOREIGN KEY (article_id) REFERENCES articles(id)
 );
-
